@@ -1,0 +1,28 @@
+
+{
+    "project_id": "MPL002",
+    "findings": [
+        {
+            "field": "expenditure_amount",
+            "sources": [
+                {
+                    "source_file": "project_records.csv",
+                    "value": 1100000
+                },
+                {
+                    "source_file": "expenditure_statement.pdf",
+                    "value": 1100000,
+                    "page": 1
+                },
+                {
+                    "source_file": "bill.pdf",
+                    "value": 1150000,
+                    "page": 1
+                }
+            ],
+            "check_type": "cross_document",
+            "result": "conflict",
+            "difference": 50000
+        }
+    ]
+}

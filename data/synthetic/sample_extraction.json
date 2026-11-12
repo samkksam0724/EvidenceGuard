@@ -1,0 +1,32 @@
+
+{
+    "project_id": "MPL001",
+    "document_type": "bill",
+    "source_file": "bill.pdf",
+    "fields": [
+        {
+            "field": "project_id",
+            "raw_value": "MPL001",
+            "normalized_value": "MPL001",
+            "page": 1,
+            "confidence": null,
+            "method": "pdf_text"
+        },
+        {
+            "field": "expenditure_amount",
+            "raw_value": "Rs. 7,50,000",
+            "normalized_value": 750000,
+            "page": 1,
+            "confidence": null,
+            "method": "pdf_text"
+        },
+        {
+            "field": "bill_date",
+            "raw_value": "2026-03-11",
+            "normalized_value": "2026-03-11",
+            "page": 1,
+            "confidence": null,
+            "method": "pdf_text"
+        }
+    ]
+}
