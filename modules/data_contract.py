@@ -21,9 +21,9 @@ FIELD_NAMES = [
     "completion_date",
     "implementing_agency",
     "vendor",
-    "bill_number"
+    "bill_number",
+    "bill_date"
 ]
-
 
 # Evidence reliability statuses
 
