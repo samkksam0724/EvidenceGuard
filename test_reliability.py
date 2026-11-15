@@ -1,7 +1,6 @@
 import unittest
 
-from modules.reliability import assess_finding, assess_project
-
+from modules.reliability import assess_finding, assess_project, suggest_evidence
 
 class TestReliability(unittest.TestCase):
 
@@ -74,6 +73,21 @@ class TestReliability(unittest.TestCase):
         report = assess_project(verification_result)
         self.assertEqual(report["overall_status"], "Conflicting")
         self.assertEqual(report["status_counts"]["Insufficient Evidence"], 1)
+    def test_suggestion_for_conflict(self):
+        finding = {
+            "field": "expenditure_amount",
+            "check_type": "cross_document",
+            "result": "conflict",
+            "difference": 50000,
+            "sources": [],
+        }
+        text = suggest_evidence(finding, "Conflicting")
+        self.assertIn("bill", text)
+        self.assertIn("50000", text)
+
+    def test_no_suggestion_when_supported(self):
+        finding = {"field": "project_id", "result": "pass", "sources": []}
+        self.assertEqual(suggest_evidence(finding, "Supported"), "")
 
 
 if __name__ == "__main__":

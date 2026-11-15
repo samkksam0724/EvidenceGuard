@@ -13,6 +13,25 @@ STATUS_PRIORITY = [
     STATUS_SUPPORTED,
 ]
 
+# What to ask for when two sources disagree on a field
+CONFLICT_REQUESTS = {
+    "expenditure_amount": (
+        "Request the original bill and expenditure statement, and ask the "
+        "implementing agency to explain the difference"
+    ),
+    "sanctioned_amount": (
+        "Request the original sanction order and confirm the sanctioned "
+        "amount with the sanctioning authority"
+    ),
+    "sanction_date": "Request the original sanction order to confirm the date",
+    "completion_date": (
+        "Request the original completion report and confirm the completion "
+        "date with the implementing agency"
+    ),
+    "bill_date": "Request the original bill to confirm the bill date",
+    "project_id": "Request the original documents and confirm the correct project ID",
+}
+
 
 def _has_low_ocr(sources):
     """True if any source has an extraction confidence below the threshold."""
@@ -61,13 +80,58 @@ def assess_finding(finding):
     return STATUS_INSUFFICIENT
 
 
+def _source_name(finding):
+    for source in finding.get("sources", []):
+        name = source.get("source_file")
+        if name and name != "project_records.csv":
+            return name
+    return "the supporting document"
+
+
+def suggest_evidence(finding, status):
+    """Say what the reviewer should ask for. Empty text if nothing is needed."""
+    field = finding.get("field", "this field")
+    source_name = _source_name(finding)
+
+    if status == STATUS_SUPPORTED:
+        return ""
+
+    if status == STATUS_CONFLICTING:
+        text = CONFLICT_REQUESTS.get(
+            field,
+            f"Request the original documents for {field} and ask the "
+            "implementing agency to explain the mismatch",
+        )
+        difference = finding.get("difference")
+        if difference not in (None, "", 0):
+            text += f" (difference: Rs. {difference})"
+        return text
+
+    if status == STATUS_UNREADABLE:
+        return (
+            f"Request a clearer or digital copy of {source_name}, "
+            f"so {field} can be read reliably"
+        )
+
+    # Insufficient Evidence
+    if finding.get("check_type") == "missing_field":
+        return f"Request a copy of {source_name} that clearly shows {field}"
+
+    return (
+        f"Request supporting document(s) that state {field}, "
+        "so it can be compared with the project record"
+    )
+
+
 def assess_project(verification_result):
     """Assess every finding and give one overall status for the project."""
     assessed = []
 
     for finding in verification_result["findings"]:
         item = dict(finding)
-        item["reliability_status"] = assess_finding(finding)
+        status = assess_finding(finding)
+        item["reliability_status"] = status
+        item["suggested_evidence"] = suggest_evidence(finding, status)
         assessed.append(item)
 
     counts = {status: 0 for status in STATUS_PRIORITY}

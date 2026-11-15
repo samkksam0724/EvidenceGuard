@@ -3,6 +3,7 @@ import streamlit as st
 
 from database.database import get_decisions, init_db, save_decision
 from modules.reliability import assess_project
+from modules.reporting import build_report
 from modules.verification import verify_project
 from sample_extractions import SAMPLE_EXTRACTIONS
 
@@ -40,6 +41,7 @@ def findings_table(report):
             "Status": STATUS_ICONS[f["reliability_status"]],
             "Explanation": f["explanation"],
             "Difference": f.get("difference", ""),
+            "Suggested evidence": f.get("suggested_evidence", ""),
             "Evidence": describe_sources(f.get("sources", [])),
         })
     return pd.DataFrame(rows)
@@ -74,6 +76,7 @@ if csv_file and pdf_files:
         st.write(pdf.name)
 
     selected = st.selectbox("Select project to verify", df["project_id"].tolist())
+
     if st.button("Run Verification"):
         documents = SAMPLE_EXTRACTIONS.get(selected)
         if documents is None:
@@ -105,17 +108,28 @@ if report:
     st.divider()
     st.header("Reviewer decision")
 
-    decision = st.radio("Decision", DECISIONS)
+    decision = st.radio("Decision", DECISIONS, index=None)
     justification = st.text_area("Justification")
 
     if st.button("Save Decision"):
-        save_decision(
-            report["project_id"],
-            report["overall_status"],
-            decision,
-            justification,
-        )
-        st.success("Decision saved.")
+        if decision is None:
+            st.warning("Choose a decision before saving.")
+        else:
+            save_decision(
+                report["project_id"],
+                report["overall_status"],
+                decision,
+                justification,
+            )
+            st.success("Decision saved.")
+
+    pdf_bytes = build_report(report, decision, justification)
+    st.download_button(
+        "Download Report (PDF)",
+        data=pdf_bytes,
+        file_name=f"EvidenceGuard_{report['project_id']}_report.pdf",
+        mime="application/pdf",
+    )
 
 saved = get_decisions()
 if saved:
