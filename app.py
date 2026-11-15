@@ -1,8 +1,7 @@
-from datetime import datetime
-
 import pandas as pd
 import streamlit as st
 
+from database.database import get_decisions, init_db, save_decision
 from modules.reliability import assess_project
 from modules.verification import verify_project
 from sample_extractions import SAMPLE_EXTRACTIONS
@@ -47,6 +46,7 @@ def findings_table(report):
 
 
 st.set_page_config(page_title="EvidenceGuard", layout="wide")
+init_db()
 
 st.title("EvidenceGuard")
 st.subheader("MPLADS Document Verification Assistant")
@@ -73,8 +73,7 @@ if csv_file and pdf_files:
     for pdf in pdf_files:
         st.write(pdf.name)
 
-    selected = st.selectbox("Select project to verify", df["project_id"])
-
+    selected = st.selectbox("Select project to verify", df["project_id"].tolist())
     if st.button("Run Verification"):
         documents = SAMPLE_EXTRACTIONS.get(selected)
         if documents is None:
@@ -110,17 +109,16 @@ if report:
     justification = st.text_area("Justification")
 
     if st.button("Save Decision"):
-        log = st.session_state.setdefault("decision_log", [])
-        log.append({
-            "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Project": report["project_id"],
-            "Overall status": report["overall_status"],
-            "Decision": decision,
-            "Justification": justification,
-        })
-        st.success("Decision recorded.")
+        save_decision(
+            report["project_id"],
+            report["overall_status"],
+            decision,
+            justification,
+        )
+        st.success("Decision saved.")
 
-log = st.session_state.get("decision_log")
-if log:
-    st.subheader("Decision log (this session)")
-    st.dataframe(pd.DataFrame(log), use_container_width=True)
+saved = get_decisions()
+if saved:
+    st.divider()
+    st.subheader("Decision log")
+    st.dataframe(pd.DataFrame(saved), use_container_width=True)
